@@ -1,0 +1,252 @@
+<!doctype html>
+<!--
+  Страница проекта. Нужна для поля «Application home page» в OAuth consent
+  screen: без него Google не даёт нажать Publish app, а значит не запускается и
+  верификация restricted scope.
+
+  Эту страницу видит не только пользователь, но и проверяющий Google. Поэтому
+  здесь не реклама, а ответы на те же вопросы, которые задаёт ревью: что делает
+  приложение, какие разрешения просит и зачем, куда уходят данные. Формулировки
+  намеренно совпадают с docs/store-listing.md и docs/permissions-rationale.md —
+  расхождение между карточкой, политикой и сайтом само по себе повод к отказу.
+
+  Двуязычная, английский первым — как и страница политики: ревьюер читает
+  по-английски, пользователи русскоязычные.
+
+  Страница самодостаточна: ни одного внешнего запроса.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Drive Duplicate Finder</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --fg: #1b1f24;
+        --muted: #5a6472;
+        --rule: #e2e6ea;
+        --accent: #1f6feb;
+        --card: #f6f8fa;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #10141a;
+          --fg: #e6edf3;
+          --muted: #9aa7b4;
+          --rule: #2a313a;
+          --accent: #6aa8ff;
+          --card: #161b22;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 2.5rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+      main { max-width: 46rem; margin: 0 auto; }
+      h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .4rem; }
+      h2 { font-size: 1.25rem; margin: 2.25rem 0 .6rem; }
+      p, ul { margin: .6rem 0; }
+      ul { padding-left: 1.3rem; }
+      li { margin: .35rem 0; }
+      a { color: var(--accent); }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: .92em;
+        word-break: break-word;
+      }
+      .tagline { font-size: 1.08rem; color: var(--muted); margin: 0 0 1.75rem; }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: .6rem;
+        padding: 1rem 1.15rem;
+        margin: 1.25rem 0;
+      }
+      .card p:first-child { margin-top: 0; }
+      .card p:last-child { margin-bottom: 0; }
+      .links { display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 1.25rem 0; }
+      hr { border: 0; border-top: 1px solid var(--rule); margin: 3rem 0 2rem; }
+      footer { color: var(--muted); font-size: .88rem; margin-top: 3rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Drive Duplicate Finder</h1>
+      <p class="tagline">
+        A Chrome extension that finds exact duplicate files in your Google Drive and helps you
+        move the extra copies to the trash.
+      </p>
+
+      <h2>What it does</h2>
+      <ul>
+        <li>Scans your whole Google Drive, or a single folder.</li>
+        <li>
+          Finds <strong>exact</strong> duplicates: files are grouped by size, then by the MD5
+          checksum that Google itself calculates. A matching MD5 means identical content — not
+          merely &ldquo;similar&rdquo;.
+        </li>
+        <li>
+          Shows duplicates in groups with thumbnails, path, date and size, so you can see how much
+          space you would get back.
+        </li>
+        <li>
+          Helps you choose which copies to remove — keep the oldest, keep the newest, or select all
+          but the first — per group or across everything visible.
+        </li>
+        <li>Moves the files you selected to the Google Drive trash, after an explicit confirmation.</li>
+        <li>Exports the list of duplicates to CSV.</li>
+      </ul>
+
+      <h2>Permissions, and why each one is needed</h2>
+      <div class="card">
+        <p>
+          <strong>Scanning is read-only.</strong> The extension asks for
+          <code>drive.readonly</code>: with that access it is technically unable to change anything
+          in your Drive.
+        </p>
+        <p>
+          <strong>Write access is asked for separately</strong> — the broader <code>drive</code>
+          scope is requested only at the moment you first use &ldquo;Move selected to trash&rdquo;,
+          and is used solely to set <code>trashed: true</code> on the files you picked.
+        </p>
+        <p>
+          <strong>Nothing is ever deleted permanently.</strong> Files go to the Drive trash, where
+          you can restore them.
+        </p>
+        <p>
+          <strong>File contents are never downloaded or read</strong> — only metadata: name, size,
+          MD5, type, modification date, parent folders and links.
+        </p>
+      </div>
+
+      <h2>Where your data goes</h2>
+      <p>
+        Nowhere. There are no servers of our own, no analytics, no telemetry and no advertising.
+        Metadata is cached locally in your browser (IndexedDB) and settings in
+        <code>chrome.storage</code>. The only network address the extension contacts is the Google
+        Drive API, using your own token. Full details are in the
+        <a href="https://ytrqa.github.io/drive-duplicate-finder-privacy/">privacy policy</a>.
+      </p>
+
+      <h2>What it deliberately does not do</h2>
+      <ul>
+        <li>Delete anything permanently, or empty the trash.</li>
+        <li>Look for &ldquo;similar&rdquo; files — only byte-identical copies.</li>
+        <li>
+          Compare Google Docs, Sheets, Slides or shortcuts: Drive provides no checksum for them, so
+          they are listed separately as &ldquo;not checked&rdquo; rather than guessed at.
+        </li>
+        <li>Scan shared drives, so files you do not own are never touched.</li>
+        <li>Send data to third parties.</li>
+      </ul>
+
+      <h2>Links</h2>
+      <div class="links">
+        <a href="https://github.com/YtrQa/drive-duplicate-finder">Project page on GitHub</a>
+        <a href="https://ytrqa.github.io/drive-duplicate-finder-privacy/">Privacy policy</a>
+        <a href="mailto:asrtehno@gmail.com">asrtehno@gmail.com</a>
+      </div>
+      <p class="tagline" style="font-size: .92rem">
+        The GitHub repository hosts this site. The extension&rsquo;s source code is kept in a
+        private repository.
+      </p>
+
+      <hr />
+
+      <h1 lang="ru">Drive Duplicate Finder</h1>
+      <p class="tagline" lang="ru">
+        Расширение Chrome, которое находит в Google Drive точные дубликаты файлов и помогает
+        переместить лишние копии в корзину.
+      </p>
+
+      <div lang="ru">
+        <h2>Что делает</h2>
+        <ul>
+          <li>Сканирует весь Google Drive или выбранную папку.</li>
+          <li>
+            Находит <strong>точные</strong> дубликаты: сначала сравнивает размер, затем контрольную
+            сумму MD5, которую вычисляет сам Google. Совпадение MD5 означает, что содержимое файлов
+            одинаково, а не просто «похоже».
+          </li>
+          <li>
+            Показывает дубликаты группами — с миниатюрами, путём, датой и размером, сразу видно,
+            сколько места освободится.
+          </li>
+          <li>
+            Помогает выбрать копии: «оставить самый старый», «оставить самый новый» или «выбрать все
+            кроме первого» — для группы или для всего видимого списка.
+          </li>
+          <li>Перемещает выбранные файлы в корзину Google Drive после явного подтверждения.</li>
+          <li>Выгружает список дубликатов в CSV.</li>
+        </ul>
+
+        <h2>Разрешения и зачем каждое</h2>
+        <div class="card">
+          <p>
+            <strong>Сканирование — только чтение.</strong> Расширение запрашивает
+            <code>drive.readonly</code>: с этим доступом изменить что-либо в Drive технически
+            невозможно.
+          </p>
+          <p>
+            <strong>Доступ на изменение запрашивается отдельно</strong> — scope <code>drive</code>
+            только в момент первого действия «Переместить выбранные в корзину» и только чтобы
+            проставить файлам <code>trashed: true</code>.
+          </p>
+          <p>
+            <strong>Безвозвратно ничего не удаляется.</strong> Файлы уходят в корзину Drive, откуда
+            их можно восстановить.
+          </p>
+          <p>
+            <strong>Содержимое файлов не скачивается и не читается</strong> — только метаданные:
+            имя, размер, MD5, тип, дата изменения, родительские папки и ссылки.
+          </p>
+        </div>
+
+        <h2>Куда уходят данные</h2>
+        <p>
+          Никуда. Нет собственных серверов, аналитики, телеметрии и рекламы. Метаданные кэшируются
+          локально в браузере (IndexedDB), настройки — в <code>chrome.storage</code>. Единственный
+          сетевой адрес, к которому обращается расширение, — Google Drive API с вашим токеном.
+          Подробности — в
+          <a href="https://ytrqa.github.io/drive-duplicate-finder-privacy/">политике
+          конфиденциальности</a>.
+        </p>
+
+        <h2>Чего расширение сознательно не делает</h2>
+        <ul>
+          <li>Не удаляет безвозвратно и не очищает корзину.</li>
+          <li>Не ищет «похожие» файлы — только побайтово одинаковые копии.</li>
+          <li>
+            Не сравнивает Google Документы, Таблицы, Презентации и ярлыки: Drive не отдаёт для них
+            контрольную сумму, поэтому они показываются отдельной строкой «Не проверено», а не
+            угадываются.
+          </li>
+          <li>Не сканирует общие диски — файлы, которыми вы не владеете, не затрагиваются.</li>
+          <li>Не передаёт данные третьим лицам.</li>
+        </ul>
+
+        <h2>Ссылки</h2>
+        <div class="links">
+          <a href="https://github.com/YtrQa/drive-duplicate-finder">Страница проекта на GitHub</a>
+          <a href="https://ytrqa.github.io/drive-duplicate-finder-privacy/">Политика конфиденциальности</a>
+          <a href="mailto:asrtehno@gmail.com">asrtehno@gmail.com</a>
+        </div>
+        <p class="tagline" style="font-size: .92rem">
+          В репозитории на GitHub лежит этот сайт. Исходный код расширения хранится в закрытом
+          репозитории.
+        </p>
+      </div>
+
+      <footer>
+        Drive Duplicate Finder is an independent project and is not affiliated with Google LLC.
+        Google Drive is a trademark of Google LLC.
+      </footer>
+    </main>
+  </body>
+</html>
